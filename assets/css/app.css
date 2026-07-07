@@ -1,0 +1,760 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap');
+
+* {
+    font-family: 'Noto Sans Thai', sans-serif;
+}
+
+body {
+    font-family: 'Noto Sans Thai', sans-serif;
+}
+:root { --blue:#0d6efd; --soft:#f5f7fb; --line:#e8edf5; --dark:#172033; }
+body { background: var(--soft); font-family: 'Noto Sans Thai', Arial, sans-serif; color:#263043; }
+.app-shell { display:flex; min-height:100vh; }
+.sidebar { width:260px; background:#ffffff; border-right:1px solid var(--line); padding:20px 16px; position:sticky; top:0; height:100vh; }
+.brand { display:flex; gap:12px; align-items:center; margin-bottom:22px; }
+.brand-icon { width:44px; height:44px; border-radius:14px; background:linear-gradient(135deg,#0d6efd,#0aa2c0); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; }
+.brand-title { font-weight:700; color:var(--dark); }
+.brand-subtitle { font-size:12px; color:#6c757d; }
+.menu a { display:block; color:#334155; text-decoration:none; padding:11px 12px; border-radius:10px; margin-bottom:6px; }
+.menu a:hover { background:#eef5ff; color:#0d6efd; }
+.main-content { flex:1; padding:22px; }
+.topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+.topbar h1 { font-size:24px; margin:0; font-weight:700; }
+.user-box { text-align:right; background:white; border:1px solid var(--line); border-radius:14px; padding:10px 14px; }
+.card { border:1px solid var(--line); border-radius:16px; box-shadow:0 6px 20px rgba(18,38,63,.04); }
+.stat-card { padding:18px; border-radius:16px; background:white; border:1px solid var(--line); }
+.stat-number { font-size:28px; font-weight:700; }
+.stat-label { color:#64748b; }
+.table th { white-space:nowrap; background:#f8fafc; }
+.scan-input { font-size:28px; height:66px; letter-spacing:1px; }
+.detail-label { color:#64748b; font-size:13px; }
+.detail-value { font-weight:600; }
+.timeline { border-left:3px solid #dbeafe; padding-left:16px; }
+.timeline-item { margin-bottom:12px; }
+@media (max-width: 900px){ .sidebar{display:none;} .main-content{padding:14px;} .topbar{display:block;} .user-box{text-align:left;margin-top:10px;} }
+/* =========================================================
+   Shipment History Responsive Fix
+   แก้ปัญหาหน้าประวัติการจัดส่งเพี้ยนบน Notebook
+========================================================= */
+
+.shipment-page {
+    overflow-x: hidden;
+}
+
+.shipment-filter-card .form-label {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.shipment-filter-card .form-control,
+.shipment-filter-card .form-select,
+.shipment-filter-card .btn {
+    font-size: 14px;
+}
+
+.shipment-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.shipment-table {
+    min-width: 1450px;
+    font-size: 13px;
+}
+
+.shipment-table th {
+    white-space: nowrap;
+    vertical-align: middle;
+    font-weight: 600;
+    background-color: #f8fafc;
+}
+
+.shipment-table td {
+    vertical-align: middle;
+}
+
+.shipment-table .col-branch-name {
+    min-width: 180px;
+    max-width: 260px;
+}
+
+.shipment-table .col-serial {
+    min-width: 130px;
+}
+
+.shipment-table .col-tracking {
+    min-width: 130px;
+}
+
+.shipment-table .col-remark {
+    min-width: 180px;
+    max-width: 260px;
+}
+
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Notebook / small laptop */
+@media (max-width: 1400px) {
+    .shipment-table {
+        min-width: 1320px;
+        font-size: 12.5px;
+    }
+
+    .shipment-summary-card h3 {
+        font-size: 24px;
+    }
+
+    .shipment-summary-card .text-muted {
+        font-size: 13px;
+    }
+}
+
+/* Tablet / small screen */
+@media (max-width: 992px) {
+    .shipment-table {
+        min-width: 1200px;
+        font-size: 12px;
+    }
+
+    .shipment-page-title {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 10px;
+    }
+
+    .shipment-page-title .btn {
+        width: 100%;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .shipment-table {
+        min-width: 1100px;
+    }
+
+    .shipment-filter-card .btn {
+        width: 100%;
+    }
+}
+
+/* =========================================================
+   Shipment History Responsive Fix
+   แก้ปัญหาหน้าประวัติการจัดส่งเพี้ยนบน Notebook
+========================================================= */
+
+.shipment-page {
+    overflow-x: hidden;
+}
+
+.shipment-page-title {
+    gap: 12px;
+}
+
+.shipment-filter-card .form-label {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.shipment-filter-card .form-control,
+.shipment-filter-card .form-select,
+.shipment-filter-card .btn {
+    font-size: 14px;
+}
+
+.shipment-table-header {
+    gap: 12px;
+}
+
+.shipment-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.shipment-table {
+    min-width: 1450px;
+    font-size: 13px;
+}
+
+.shipment-table th {
+    white-space: nowrap;
+    vertical-align: middle;
+    font-weight: 600;
+    background-color: #f8fafc;
+}
+
+.shipment-table td {
+    vertical-align: middle;
+}
+
+.shipment-table .col-branch-name {
+    min-width: 180px;
+    max-width: 260px;
+}
+
+.shipment-table .col-serial {
+    min-width: 130px;
+}
+
+.shipment-table .col-tracking {
+    min-width: 130px;
+}
+
+.shipment-table .col-remark {
+    min-width: 180px;
+    max-width: 260px;
+}
+
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Notebook / small laptop */
+@media (max-width: 1400px) {
+    .shipment-table {
+        min-width: 1320px;
+        font-size: 12.5px;
+    }
+
+    .shipment-summary-card h3 {
+        font-size: 24px;
+    }
+
+    .shipment-summary-card .text-muted {
+        font-size: 13px;
+    }
+}
+
+/* Tablet / small screen */
+@media (max-width: 992px) {
+    .shipment-table {
+        min-width: 1200px;
+        font-size: 12px;
+    }
+
+    .shipment-page-title {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+
+    .shipment-page-title .btn {
+        width: 100%;
+    }
+
+    .shipment-table-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .shipment-table {
+        min-width: 1100px;
+    }
+
+    .shipment-filter-card .btn {
+        width: 100%;
+    }
+
+    .shipment-filter-card .d-flex {
+        flex-direction: column;
+    }
+
+    .shipment-filter-card .d-flex .btn,
+    .shipment-filter-card .d-flex a {
+        width: 100%;
+    }
+}
+
+/* =========================================================
+   Shipment History Responsive Fix
+   ประวัติการจัดส่ง Harddisk
+========================================================= */
+
+.shipment-page {
+    overflow-x: hidden;
+}
+
+.shipment-page-title {
+    gap: 12px;
+}
+
+.shipment-filter-card .form-label {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.shipment-filter-card .form-control,
+.shipment-filter-card .form-select,
+.shipment-filter-card .btn {
+    font-size: 14px;
+}
+
+.shipment-table-header {
+    gap: 12px;
+}
+
+.shipment-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.shipment-table {
+    min-width: 1050px;
+    font-size: 13px;
+}
+
+.shipment-table th {
+    white-space: nowrap;
+    vertical-align: middle;
+    font-weight: 600;
+    background-color: #f8fafc;
+}
+
+.shipment-table td {
+    vertical-align: middle;
+}
+
+.shipment-table .col-branch-name {
+    min-width: 180px;
+    max-width: 260px;
+}
+
+.shipment-table .col-serial {
+    min-width: 130px;
+}
+
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Notebook / small laptop */
+@media (max-width: 1400px) {
+    .shipment-table {
+        min-width: 1000px;
+        font-size: 12.5px;
+    }
+
+    .shipment-summary-card h3 {
+        font-size: 24px;
+    }
+
+    .shipment-summary-card .text-muted {
+        font-size: 13px;
+    }
+}
+
+/* Tablet / small screen */
+@media (max-width: 992px) {
+    .shipment-table {
+        min-width: 950px;
+        font-size: 12px;
+    }
+
+    .shipment-page-title {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+
+    .shipment-page-title .btn {
+        width: 100%;
+    }
+
+    .shipment-table-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .shipment-table {
+        min-width: 900px;
+    }
+
+    .shipment-filter-card .btn {
+        width: 100%;
+    }
+
+    .shipment-filter-card .d-flex {
+        flex-direction: column;
+    }
+
+    .shipment-filter-card .d-flex .btn,
+    .shipment-filter-card .d-flex a {
+        width: 100%;
+    }
+}
+
+/* =========================================================
+   Shipment History Responsive Fix
+   ประวัติการจัดส่ง Harddisk
+========================================================= */
+
+.shipment-page {
+    overflow-x: hidden;
+}
+
+.shipment-page-title {
+    gap: 12px;
+}
+
+.shipment-filter-card .form-label {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.shipment-filter-card .form-control,
+.shipment-filter-card .form-select,
+.shipment-filter-card .btn {
+    font-size: 14px;
+}
+
+.shipment-table-header {
+    gap: 12px;
+}
+
+.shipment-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.shipment-table {
+    min-width: 920px;
+    font-size: 13px;
+}
+
+.shipment-table th {
+    white-space: nowrap;
+    vertical-align: middle;
+    font-weight: 600;
+    background-color: #f8fafc;
+}
+
+.shipment-table td {
+    vertical-align: middle;
+}
+
+.shipment-table .col-branch-name {
+    min-width: 220px;
+    max-width: 320px;
+}
+
+.shipment-table .col-serial {
+    min-width: 140px;
+}
+
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Notebook / small laptop */
+@media (max-width: 1400px) {
+    .shipment-table {
+        min-width: 880px;
+        font-size: 12.5px;
+    }
+
+    .shipment-summary-card h3 {
+        font-size: 24px;
+    }
+
+    .shipment-summary-card .text-muted {
+        font-size: 13px;
+    }
+}
+
+/* Tablet / small screen */
+@media (max-width: 992px) {
+    .shipment-table {
+        min-width: 850px;
+        font-size: 12px;
+    }
+
+    .shipment-page-title {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+
+    .shipment-page-title .btn {
+        width: 100%;
+    }
+
+    .shipment-table-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .shipment-table {
+        min-width: 800px;
+    }
+
+    .shipment-filter-card .btn {
+        width: 100%;
+    }
+
+    .shipment-filter-card .d-flex {
+        flex-direction: column;
+    }
+
+    .shipment-filter-card .d-flex .btn,
+    .shipment-filter-card .d-flex a {
+        width: 100%;
+    }
+}
+
+/* =========================================================
+   Shipment History Responsive Fix
+   ประวัติการจัดส่ง Harddisk
+========================================================= */
+
+.shipment-page {
+    overflow-x: hidden;
+}
+
+.shipment-page-title {
+    gap: 12px;
+}
+
+.shipment-filter-card .form-label {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.shipment-filter-card .form-control,
+.shipment-filter-card .form-select,
+.shipment-filter-card .btn {
+    font-size: 14px;
+}
+
+.shipment-table-header {
+    gap: 12px;
+}
+
+.shipment-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.shipment-table {
+    min-width: 920px;
+    font-size: 13px;
+}
+
+.shipment-table th {
+    white-space: nowrap;
+    vertical-align: middle;
+    font-weight: 600;
+    background-color: #f8fafc;
+}
+
+.shipment-table td {
+    vertical-align: middle;
+}
+
+.shipment-table .col-branch-name {
+    min-width: 220px;
+    max-width: 320px;
+}
+
+.shipment-table .col-serial {
+    min-width: 140px;
+}
+
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Notebook / small laptop */
+@media (max-width: 1400px) {
+    .shipment-table {
+        min-width: 880px;
+        font-size: 12.5px;
+    }
+
+    .shipment-summary-card h3 {
+        font-size: 24px;
+    }
+
+    .shipment-summary-card .text-muted {
+        font-size: 13px;
+    }
+}
+
+/* Tablet / small screen */
+@media (max-width: 992px) {
+    .shipment-table {
+        min-width: 850px;
+        font-size: 12px;
+    }
+
+    .shipment-page-title {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+
+    .shipment-page-title .btn {
+        width: 100%;
+    }
+
+    .shipment-table-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .shipment-table {
+        min-width: 800px;
+    }
+
+    .shipment-filter-card .btn {
+        width: 100%;
+    }
+
+    .shipment-filter-card .d-flex {
+        flex-direction: column;
+    }
+
+    .shipment-filter-card .d-flex .btn,
+    .shipment-filter-card .d-flex a {
+        width: 100%;
+    }
+}
+
+
+/* ================================
+   Sidebar Spacing Improvement
+================================ */
+
+.sidebar {
+    width: 270px;
+    padding: 18px 14px;
+}
+
+.sidebar .nav,
+.sidebar-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar .nav-link,
+.sidebar-menu a,
+.menu-item {
+    min-height: 48px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    font-size: 16px;
+    line-height: 1.2;
+}
+
+.sidebar .nav-link span,
+.sidebar-menu a span,
+.menu-item span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sidebar .badge,
+.menu-badge {
+    min-width: 42px;
+    height: 30px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* Active menu */
+.sidebar .nav-link.active,
+.sidebar-menu a.active,
+.menu-item.active {
+    background: #e8f1ff;
+    color: #0d6efd;
+    font-weight: 700;
+}
+
+/* ลดความชิดของเส้นแบ่งซ้ายกับเนื้อหา */
+.main-content,
+.content-wrapper {
+    padding-left: 28px;
+}
+
+/* ถ้ามีเส้นแดงหรือเส้นแบ่งด้านซ้าย */
+.layout-divider,
+.sidebar-divider {
+    margin-right: 24px;
+}
+
+/* Topbar badge spacing */
+.topbar-badges,
+.header-alerts {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* ปรับช่องว่างหัวหน้า */
+.page-header,
+.content-header {
+    padding-top: 18px;
+    padding-bottom: 14px;
+}
+
+.app-layout {
+    display: grid;
+    grid-template-columns: 270px 1fr;
+    gap: 24px;
+}
+
+.app-main {
+    padding: 18px 24px 24px 24px;
+}
