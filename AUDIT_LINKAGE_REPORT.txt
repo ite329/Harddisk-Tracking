@@ -1,0 +1,65 @@
+Harddisk Delivery Web - Linkage Audit Report
+ตรวจสอบวันที่: 2026-07-08
+
+ผลตรวจสอบ
+1) PHP syntax check
+- ตรวจไฟล์ PHP หลักทั้งหมด ยกเว้น assets/database/backup
+- ผลลัพธ์: No syntax errors detected
+
+2) Link/Form/Redirect check
+- ตรวจ href/action/header Location ที่อ้างอิงไฟล์ .php
+- ผลลัพธ์หลังแก้ไข: ไม่พบ path ปลายทางที่หาย
+
+3) จุดเชื่อมโยงที่พบปัญหาและแก้ไขแล้ว
+- assign_hdd.php เดิมอัปเดต Serial ที่ harddisk_delivery_requests แต่ไม่ได้บันทึก harddisk_request_items ทำให้ matched.php/ship.php บางส่วนอ่าน Serial ไม่เจอ
+  แก้ไข: เพิ่มการ sync harddisk_request_items หลังยิงบาร์โค้ดสำเร็จ
+
+- matched.php เดิมอ่าน Serial จาก harddisk_request_items อย่างเดียว
+  แก้ไข: ใช้ COALESCE(i.hdd_serial, r.hdd_serial) เพื่อรองรับข้อมูลทั้ง flow เก่าและใหม่
+
+- matched.php เดิมปุ่มลบชี้ไป delete_matched.php ในโฟลเดอร์ requests แต่ไม่มีไฟล์นี้
+  แก้ไข: เปลี่ยนให้ใช้ modules/requests/delete.php ซึ่งมีระบบซิงก์ claim_returns อยู่แล้ว
+
+- ship.php เดิมตรวจ matched_by ด้วยชื่อที่ไม่รวมรหัสพนักงาน แต่ assign_hdd.php บันทึกแบบ ชื่อ (รหัส)
+  แก้ไข: เพิ่ม identifier แบบ ชื่อ (รหัสพนักงาน) ทำให้ผู้ใช้เดิมยืนยันจัดส่งรายการของตนเองได้
+
+- ship.php เดิมอ่าน Serial จาก harddisk_request_items เท่านั้น
+  แก้ไข: อ่านจาก harddisk_delivery_requests.hdd_serial ก่อน แล้วค่อย fallback ไป harddisk_request_items
+
+- save.php และ claim_returns/index.php เดิมบางจุดใช้ชื่อคอลัมน์ shipment แบบ delivery_request_id/request_no แต่ตารางจริงใช้ request_id/delivery_request_no
+  แก้ไข: เพิ่ม fallback ให้รองรับ request_id และ delivery_request_no
+
+- header.php เดิม Badge บางรายการนับ requested_by แบบ exact string ทำให้ข้อมูลที่บันทึกแบบ ชื่อ (รหัส) อาจไม่นับ
+  แก้ไข: นับจากชุดตัวระบุผู้ใช้หลายแบบ เช่น ชื่อ, รหัสพนักงาน, ชื่อ (รหัส)
+
+- modules/scan/match.php และ modules/scan/delete_matched.php เดิม redirect ไป modules/scan/matched.php ซึ่งไม่มีไฟล์
+  แก้ไข: redirect ไป modules/requests/matched.php
+
+- public/logout.php เดิม redirect ไป URL ภายนอก
+  แก้ไข: redirect กลับ public/login.php ของระบบนี้
+
+ไฟล์ที่แก้ไข
+- includes/header.php
+- includes/functions.php
+- login.php
+- public/logout.php
+- modules/requests/assign_hdd.php
+- modules/requests/matched.php
+- modules/requests/save.php
+- modules/shipments/ship.php
+- modules/claim_returns/index.php
+- modules/scan/match.php
+- modules/scan/delete_matched.php
+
+ข้อแนะนำหลังวางไฟล์
+1) Backup โปรเจกต์เดิมก่อน
+2) วางไฟล์ทับที่ C:\xampp\htdocs\harddisk_delivery_web
+3) กด Ctrl + F5
+4) ทดสอบ workflow:
+   - Login
+   - บันทึกคำขอส่ง HDD
+   - ยิงบาร์โค้ด HDD
+   - หน้า matched ต้องเห็น Serial HDD
+   - ยืนยันจัดส่งแล้ว harddisk_shipments ต้องมีข้อมูล และ harddisk_inventory เป็น shipped
+   - หากพบประวัติซ้ำ ให้หน้า claim_returns มีรายการรอรับคืนจากสาขาของผู้ใช้ที่ Login อยู่
+   - กดยกเลิก/ลบคำขอ แล้วรายการ claim_returns ที่เกี่ยวข้องต้องถูกซ่อน/ยกเลิกตาม
