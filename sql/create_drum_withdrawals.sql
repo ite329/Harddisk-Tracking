@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS `harddisk_db`.`drum_withdrawals` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `request_no` VARCHAR(40) NOT NULL,
+  `main_branch_code` VARCHAR(30) NOT NULL,
+  `branch_code` VARCHAR(30) NULL,
+  `branch_name` VARCHAR(255) NOT NULL,
+  `drum_code` VARCHAR(50) NOT NULL,
+  `recorded_by` VARCHAR(255) NOT NULL,
+  `recorded_by_employee_code` VARCHAR(50) NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NULL DEFAULT NULL,
+  `deleted_at` DATETIME NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_drum_request_no` (`request_no`),
+  KEY `idx_drum_main_branch_code` (`main_branch_code`),
+  KEY `idx_drum_branch_code` (`branch_code`),
+  KEY `idx_drum_code` (`drum_code`),
+  KEY `idx_drum_created_at` (`created_at`),
+  KEY `idx_drum_deleted_at` (`deleted_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

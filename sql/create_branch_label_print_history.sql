@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS `harddisk_db`.`branch_label_print_history` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `main_branch_code` VARCHAR(30) NOT NULL,
+    `branch_code` VARCHAR(30) NULL,
+    `branch_name` VARCHAR(255) NOT NULL,
+    `shipping_address` TEXT NULL,
+    `asset_name` VARCHAR(150) NULL,
+    `print_orientation` VARCHAR(20) NOT NULL DEFAULT 'portrait',
+    `print_source` VARCHAR(30) NOT NULL DEFAULT 'direct_branch',
+    `printed_by_employee_code` VARCHAR(50) NULL,
+    `printed_by_name` VARCHAR(255) NULL,
+    `printed_ip` VARCHAR(45) NULL,
+    `user_agent` VARCHAR(500) NULL,
+    `printed_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_branch_label_printed_at` (`printed_at`),
+    INDEX `idx_branch_label_branch_code` (`branch_code`),
+    INDEX `idx_branch_label_main_code` (`main_branch_code`),
+    INDEX `idx_branch_label_employee_code` (`printed_by_employee_code`),
+    INDEX `idx_branch_label_asset_name` (`asset_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

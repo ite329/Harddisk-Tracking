@@ -1,0 +1,51 @@
+CREATE TABLE IF NOT EXISTS branch_import_batches (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    batch_no VARCHAR(50) NOT NULL,
+    import_month VARCHAR(7) NOT NULL,
+    original_filename VARCHAR(255) NOT NULL,
+    stored_filename VARCHAR(500) DEFAULT NULL,
+    total_rows INT NOT NULL DEFAULT 0,
+    new_rows INT NOT NULL DEFAULT 0,
+    updated_rows INT NOT NULL DEFAULT 0,
+    unchanged_rows INT NOT NULL DEFAULT 0,
+    error_rows INT NOT NULL DEFAULT 0,
+    status ENUM('uploaded','validated','imported','failed','cancelled') NOT NULL DEFAULT 'uploaded',
+    allow_insert_new TINYINT(1) NOT NULL DEFAULT 1,
+    allow_blank_overwrite TINYINT(1) NOT NULL DEFAULT 0,
+    deactivate_missing TINYINT(1) NOT NULL DEFAULT 0,
+    uploaded_by VARCHAR(100) NOT NULL,
+    uploaded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    imported_by VARCHAR(100) DEFAULT NULL,
+    imported_at DATETIME DEFAULT NULL,
+    remark TEXT DEFAULT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT NULL,
+    INDEX idx_import_month (import_month),
+    INDEX idx_uploaded_by (uploaded_by),
+    INDEX idx_status (status),
+    UNIQUE KEY uk_batch_no (batch_no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS branch_import_rows (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    batch_id INT NOT NULL,
+    row_no INT NOT NULL,
+    main_branch_code VARCHAR(20) DEFAULT NULL,
+    branch_code VARCHAR(50) DEFAULT NULL,
+    branch_name VARCHAR(255) DEFAULT NULL,
+    full_address TEXT DEFAULT NULL,
+    phone VARCHAR(100) DEFAULT NULL,
+    landmark VARCHAR(255) DEFAULT NULL,
+    is_active TINYINT(1) DEFAULT 1,
+    action_type ENUM('insert','update','unchanged','error') NOT NULL DEFAULT 'unchanged',
+    error_message TEXT DEFAULT NULL,
+    old_data MEDIUMTEXT DEFAULT NULL,
+    new_data MEDIUMTEXT DEFAULT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_batch_id (batch_id),
+    INDEX idx_branch_code (branch_code),
+    INDEX idx_action_type (action_type),
+    CONSTRAINT fk_branch_import_rows_batch
+        FOREIGN KEY (batch_id) REFERENCES branch_import_batches(id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
