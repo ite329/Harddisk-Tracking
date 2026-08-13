@@ -78,10 +78,17 @@ function normalizeThaiText($value): string
 
     // Case 1: text is already correct UTF-8.
     if ($isUtf8($text)) {
-        // Fix common mojibake such as "à¸à¸²à¸¢..." caused by UTF-8 bytes decoded as latin1.
-        if (preg_match('/(?:à¸|à¹|Ã|Â)/u', $text) === 1 && function_exists('utf8_decode')) {
-            $candidate = @utf8_decode($text);
-            if (is_string($candidate) && $candidate !== '' && $isUtf8($candidate) && $hasThai($candidate)) {
+        // Fix common mojibake such as "à¸à¸²à¸¢..." caused by UTF-8 bytes being decoded as Windows-1252/Latin-1.
+        if (preg_match('/(?:à¸|à¹|Ã|Â)/u', $text) === 1) {
+            $candidate = '';
+
+            if (function_exists('mb_convert_encoding')) {
+                $candidate = (string)@mb_convert_encoding($text, 'Windows-1252', 'UTF-8');
+            } elseif (function_exists('iconv')) {
+                $candidate = (string)@iconv('UTF-8', 'Windows-1252//IGNORE', $text);
+            }
+
+            if ($candidate !== '' && $isUtf8($candidate) && $hasThai($candidate)) {
                 return trim($candidate);
             }
         }
@@ -119,6 +126,133 @@ function shipmentDisplayNameOnly($value): string
     $displayName = preg_replace('/\s*\(\d+\)\s*$/u', '', $displayName);
 
     return trim((string)$displayName);
+}
+
+
+function shipmentReporterLooksCorrupted(string $value): bool
+{
+    $value = trim($value);
+    if ($value === '') {
+        return true;
+    }
+
+    if (preg_match('/(?:à¸|à¹|Ã|Â)/u', $value) === 1) {
+        return true;
+    }
+
+    return substr_count($value, '?') >= 2 || preg_match('/\x{FFFD}/u', $value) === 1;
+}
+
+function shipmentResolveUserName(PDO $pdo, string $lookupValue): string
+{
+    static $metadata = null;
+    static $cache = [];
+
+    $lookupValue = trim($lookupValue);
+    if ($lookupValue === '') {
+        return '';
+    }
+    if (array_key_exists($lookupValue, $cache)) {
+        return $cache[$lookupValue];
+    }
+
+    try {
+        if ($metadata === null) {
+            $tableStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'");
+            $tableStmt->execute();
+            if ((int)$tableStmt->fetchColumn() === 0) {
+                $metadata = false;
+            } else {
+                $columnStmt = $pdo->prepare("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'");
+                $columnStmt->execute();
+                $columns = array_map('strtolower', $columnStmt->fetchAll(PDO::FETCH_COLUMN));
+                $metadata = ['columns' => $columns];
+            }
+        }
+
+        if ($metadata === false) {
+            return $cache[$lookupValue] = '';
+        }
+
+        $columns = $metadata['columns'];
+        $has = static fn(string $column): bool => in_array($column, $columns, true);
+
+        $nameExpression = '';
+        foreach (['full_name', 'fullname', 'display_name', 'employee_name', 'name', 'user_name', 'username'] as $column) {
+            if ($has($column)) {
+                $nameExpression = "TRIM(COALESCE(`{$column}`, ''))";
+                break;
+            }
+        }
+        if ($nameExpression === '') {
+            $first = '';
+            $last = '';
+            foreach (['first_name', 'firstname', 'fname'] as $column) {
+                if ($has($column)) { $first = $column; break; }
+            }
+            foreach (['last_name', 'lastname', 'lname', 'surname'] as $column) {
+                if ($has($column)) { $last = $column; break; }
+            }
+            if ($first !== '' || $last !== '') {
+                $firstSql = $first !== '' ? "COALESCE(`{$first}`, '')" : "''";
+                $lastSql = $last !== '' ? "COALESCE(`{$last}`, '')" : "''";
+                $nameExpression = "TRIM(CONCAT({$firstSql}, ' ', {$lastSql}))";
+            }
+        }
+        if ($nameExpression === '') {
+            return $cache[$lookupValue] = '';
+        }
+
+        $conditions = [];
+        $params = [];
+        foreach (['employee_code', 'emp_code', 'employee_id', 'emp_id', 'user_code', 'staff_code', 'username', 'user_name', 'login_name', 'id'] as $index => $column) {
+            if (!$has($column)) continue;
+            $parameter = ':lookup_' . $index;
+            $conditions[] = "TRIM(CAST(`{$column}` AS CHAR)) = {$parameter}";
+            $params[$parameter] = $lookupValue;
+        }
+        if (!$conditions) {
+            return $cache[$lookupValue] = '';
+        }
+
+        $stmt = $pdo->prepare("SELECT {$nameExpression} AS display_name FROM `users` WHERE (" . implode(' OR ', $conditions) . ") LIMIT 1");
+        $stmt->execute($params);
+        $name = shipmentDisplayNameOnly($stmt->fetchColumn() ?: '');
+        return $cache[$lookupValue] = $name;
+    } catch (Throwable $e) {
+        error_log('[shipments/index] Cannot resolve reporter name: ' . $e->getMessage());
+        return $cache[$lookupValue] = '';
+    }
+}
+
+function shipmentResolveReporter(PDO $pdo, array $row): string
+{
+    $fallback = '';
+    foreach (['request_requested_by', 'reported_by_raw', 'reported_by', 'created_by_raw', 'created_by'] as $field) {
+        $raw = trim((string)($row[$field] ?? ''));
+        if ($raw === '') continue;
+
+        $display = shipmentDisplayNameOnly($raw);
+        if ($fallback === '' && $display !== '') {
+            $fallback = $display;
+        }
+        if ($display !== '' && !shipmentReporterLooksCorrupted($display)) {
+            return $display;
+        }
+
+        $lookupValues = [$raw, $display];
+        if (preg_match_all('/\d{3,10}/', $raw, $matches)) {
+            $lookupValues = array_merge($lookupValues, $matches[0]);
+        }
+        foreach (array_unique($lookupValues) as $lookupValue) {
+            $resolved = shipmentResolveUserName($pdo, (string)$lookupValue);
+            if ($resolved !== '' && !shipmentReporterLooksCorrupted($resolved)) {
+                return $resolved;
+            }
+        }
+    }
+
+    return $fallback;
 }
 
 function shipmentStatusText(?string $status): string
@@ -679,11 +813,8 @@ if (in_array($exportType, ['csv', 'excel', 'pdf'], true)) {
     $reportRows = [];
     foreach ($exportRows as $index => $row) {
         $displayDate = $row['display_shipped_at'] ?? $row['shipped_date'] ?? null;
-        // ใช้ผู้บันทึกคำขอจาก harddisk_delivery_requests.requested_by เป็นข้อมูลหลัก
-        $reporter = shipmentDisplayNameOnly($row['request_requested_by'] ?? '');
-        // รองรับข้อมูลเก่าที่อาจยังไม่ได้เชื่อม request_id หรือไม่มี requested_by
-        if ($reporter === '') $reporter = shipmentDisplayNameOnly($row['reported_by_raw'] ?? $row['reported_by'] ?? '');
-        if ($reporter === '') $reporter = shipmentDisplayNameOnly($row['created_by_raw'] ?? $row['created_by'] ?? '');
+        // ใช้ชื่อจากคำขอเป็นหลัก พร้อมแก้ mojibake และ fallback ไปตาราง users เมื่อพบข้อมูลชื่อเสีย
+        $reporter = shipmentResolveReporter($pdo, $row);
 
         $reportRows[] = [
             'ลำดับ' => $index + 1,
@@ -1209,6 +1340,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             <a class="hdd-module-menu-item" href="<?php echo $baseUrl; ?>/modules/requests/index.php">
                 <span class="hdd-module-menu-icon"><?php echo hddSidebarIcon('list'); ?></span>
                 <span class="hdd-module-menu-content"><span class="hdd-module-menu-title">รายการเบิก</span><span class="hdd-module-menu-note">ติดตามคำขอทั้งหมด</span></span>
+                <?php if ($myHddRequestCount > 0): ?><span class="hdd-module-menu-count"><?php echo number_format($myHddRequestCount); ?></span><?php endif; ?>
             </a>
             <?php endif; ?>
             <?php if (function_exists('can') && can('shipment.view')): ?>
@@ -1391,17 +1523,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                                 $branchName = trim((string)($row['branch_name'] ?? ''));
                                 $hddSerial = trim((string)($row['hdd_serial'] ?? ''));
                                 $status = trim((string)($row['display_status'] ?? ''));
-                                // ใช้ผู้บันทึกคำขอจาก harddisk_delivery_requests.requested_by เป็นข้อมูลหลัก
-                                $reporter = shipmentDisplayNameOnly($row['request_requested_by'] ?? '');
-
-                                // รองรับข้อมูลเก่าที่อาจยังไม่ได้เชื่อม request_id หรือไม่มี requested_by
-                                if ($reporter === '') {
-                                    $reporter = shipmentDisplayNameOnly($row['reported_by_raw'] ?? $row['reported_by'] ?? '');
-                                }
-
-                                if ($reporter === '') {
-                                    $reporter = shipmentDisplayNameOnly($row['created_by_raw'] ?? $row['created_by'] ?? '');
-                                }
+                                // ใช้ชื่อจากคำขอเป็นหลัก พร้อมแก้ mojibake และ fallback ไปตาราง users เมื่อพบข้อมูลชื่อเสีย
+                                $reporter = shipmentResolveReporter($pdo, $row);
 
                                 $remark = normalizeThaiText($row['remark'] ?? '');
                                 $requestReason = normalizeThaiText($row['request_reason'] ?? '');
@@ -1460,7 +1583,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                                                 data-request-no="<?= h($requestNo !== '' ? $requestNo : '-') ?>"
                                                 data-branch-name="<?= h($branchName !== '' ? $branchName : '-') ?>"
                                                 data-hdd-serial="<?= h($hddSerial !== '' ? $hddSerial : '-') ?>"
-                                                data-status="<?= h($status) ?>"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" role="img" aria-label="แก้ไข"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10A.5.5 0 0 1 5.5 14H2a.5.5 0 0 1-.5-.5V10a.5.5 0 0 1 .146-.354zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zM12.793 5.5 10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zM3.5 10.207 2.5 11.207V13h1.793l1-1H5.5v-.5H5a.5.5 0 0 1-.5-.5v-.5H4a.5.5 0 0 1-.5-.5z"/></svg></button>
+                                                data-status="<?= h($status) ?>">แก้ไข</button>
                                         </td>
                                     <?php endif; ?>
                                 </tr>
