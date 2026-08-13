@@ -289,182 +289,567 @@ try {
 }
 
 require_once __DIR__ . '/../../includes/header.php';
+
+require_login();
+require_permission('dashboard.view');
+
 ?>
 
+
 <style>
-    body { background: #f3f6fb; }
-    .dashboard-page { padding: 10px 0 16px 0; }
-    .dashboard-title { font-size: 22px; font-weight: 900; color: #0f172a; margin: 0; line-height: 1.15; }
-    .dashboard-subtitle { font-size: 13px; color: #64748b; }
-    .dashboard-card { border: 0; border-radius: 16px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.07); overflow: hidden; }
-    .dashboard-card .card-header { background: #ffffff; border-bottom: 1px solid #e5e7eb; font-weight: 900; color: #0f172a; padding: 10px 14px; }
-    .dashboard-card .card-body { padding: 12px; }
-    .hero-card { border: 0; border-radius: 16px; background: linear-gradient(135deg, #0ea5e9, #2563eb); color: #ffffff; box-shadow: 0 10px 24px rgba(37, 99, 235, 0.22); }
-    .hero-card .card-body { padding: 12px 16px; }
-    .kpi-card { border: 0; border-radius: 15px; box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07); height: 100%; }
-    .kpi-card .card-body { padding: 12px 14px; }
-    .kpi-label { color: #64748b; font-size: 12px; margin-bottom: 4px; }
-    .kpi-value { font-size: 28px; font-weight: 900; color: #0f172a; line-height: 1; }
-    .kpi-note { color: #94a3b8; font-size: 11px; margin-top: 5px; }
-    .workflow-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.16); color: #ffffff; font-size: 12px; font-weight: 800; white-space: nowrap; }
-    .quick-btn { border-radius: 10px; font-size: 12px; font-weight: 800; padding: 6px 10px; }
-    .table-scroll { max-height: 330px; overflow: auto; }
-    .table-scroll-small { max-height: 245px; overflow: auto; }
-    .table-dashboard th { position: sticky; top: 0; z-index: 2; background: #f8fafc; font-size: 12px; white-space: nowrap; padding: 7px 8px; color: #334155; }
-    .table-dashboard td { font-size: 12px; vertical-align: middle; padding: 7px 8px; }
-    .table-dashboard .badge { font-size: 11px; }
-    .serial-text { font-family: Consolas, Monaco, monospace; font-weight: 900; color: #7c2d12; white-space: nowrap; }
-    .branch-code { font-weight: 900; color: #1d4ed8; white-space: nowrap; }
-    .text-ellipsis { max-width: 210px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .status-row { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
-    .status-row:last-child { border-bottom: 0; }
-    .status-count { font-weight: 900; color: #0f172a; font-size: 13px; }
-    .mini-bar { height: 6px; background: #e5e7eb; border-radius: 999px; overflow: hidden; margin-top: 5px; }
-    .mini-bar-fill { height: 100%; background: #2563eb; border-radius: 999px; }
+    body {
+        background: #f5f8fc;
+    }
+    .hdd-dashboard {
+        padding: 12px 0 18px 0;
+    }
+    .hdd-hero {
+        border: 0;
+        border-radius: 22px;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,.26), transparent 34%),
+            linear-gradient(135deg, #0284c7 0%, #2563eb 56%, #1d4ed8 100%);
+        color: #ffffff;
+        box-shadow: 0 16px 34px rgba(37, 99, 235, .24);
+    }
+    .hdd-hero .card-body {
+        padding: 18px 20px;
+    }
+    .hdd-title {
+        font-size: 24px;
+        font-weight: 900;
+        line-height: 1.18;
+        margin: 0;
+    }
+    .hdd-subtitle {
+        font-size: 13px;
+        opacity: .86;
+        margin-top: 4px;
+    }
+    .hero-stat {
+        min-width: 124px;
+        border-radius: 16px;
+        background: rgba(255,255,255,.16);
+        border: 1px solid rgba(255,255,255,.22);
+        padding: 10px 12px;
+        backdrop-filter: blur(4px);
+    }
+    .hero-stat .label {
+        font-size: 11px;
+        opacity: .82;
+    }
+    .hero-stat .value {
+        font-size: 22px;
+        font-weight: 900;
+        line-height: 1.1;
+    }
+    .quick-action {
+        border-radius: 14px;
+        font-weight: 800;
+        font-size: 12px;
+        padding: 9px 12px;
+        white-space: nowrap;
+    }
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 10px;
+        align-items: stretch;
+    }
+    .kpi-tile {
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 7px 18px rgba(15, 23, 42, .055);
+        padding: 10px 12px;
+        min-height: 92px;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+    .kpi-tile::after {
+        content: "";
+        width: 62px;
+        height: 62px;
+        border-radius: 999px;
+        position: absolute;
+        right: -28px;
+        top: -28px;
+        background: #eff6ff;
+    }
+    .kpi-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 900;
+        color: #1d4ed8;
+        background: #dbeafe;
+        margin-bottom: 7px;
+        position: relative;
+        z-index: 1;
+    }
+    .kpi-label {
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1.2;
+        position: relative;
+        z-index: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .kpi-value {
+        color: #0f172a;
+        font-size: 24px;
+        line-height: 1;
+        font-weight: 900;
+        margin-top: 4px;
+        position: relative;
+        z-index: 1;
+    }
+    .kpi-note {
+        color: #94a3b8;
+        font-size: 10.5px;
+        margin-top: 6px;
+        line-height: 1.2;
+        position: relative;
+        z-index: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .dash-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        background: #ffffff;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, .055);
+        overflow: hidden;
+    }
+    .dash-card .card-header {
+        background: #ffffff;
+        border-bottom: 1px solid #eef2f7;
+        padding: 13px 16px;
+        font-weight: 900;
+        color: #0f172a;
+    }
+    .dash-card .card-body {
+        padding: 14px 16px;
+    }
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 900;
+    }
+    .section-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: #2563eb;
+        box-shadow: 0 0 0 4px #dbeafe;
+    }
+    .table-dash {
+        min-width: 900px;
+    }
+    .table-dash th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: #f8fafc;
+        color: #334155;
+        font-size: 12px;
+        white-space: nowrap;
+        padding: 8px 9px;
+    }
+    .table-dash td {
+        font-size: 12px;
+        vertical-align: middle;
+        padding: 8px 9px;
+    }
+    .table-dash .badge {
+        font-size: 11px;
+        border-radius: 999px;
+        padding: 6px 8px;
+    }
+    .table-area-lg {
+        max-height: 410px;
+        overflow: auto;
+    }
+    .table-area-sm {
+        max-height: 285px;
+        overflow: auto;
+    }
+    .table-area-stack-main {
+        max-height: 390px;
+        overflow: auto;
+    }
+    .table-area-stack {
+        max-height: 320px;
+        overflow: auto;
+    }
+    .table-dash-wide {
+        width: 100%;
+        min-width: 0;
+        table-layout: fixed;
+    }
+    .table-dash-urgent col.col-request-no { width: 18%; }
+    .table-dash-urgent col.col-main-branch { width: 9%; }
+    .table-dash-urgent col.col-branch-name { width: 24%; }
+    .table-dash-urgent col.col-serial { width: 13%; }
+    .table-dash-urgent col.col-status { width: 13%; }
+    .table-dash-urgent col.col-date { width: 14%; }
+    .table-dash-urgent col.col-action { width: 9%; }
+
+    .table-dash-requests col.col-request-no { width: 18%; }
+    .table-dash-requests col.col-main-branch { width: 9%; }
+    .table-dash-requests col.col-branch-name { width: 24%; }
+    .table-dash-requests col.col-serial { width: 13%; }
+    .table-dash-requests col.col-status { width: 13%; }
+    .table-dash-requests col.col-date { width: 14%; }
+    .table-dash-requests col.col-reason { width: 9%; }
+
+    .table-dash-shipments col.col-ship-date { width: 14%; }
+    .table-dash-shipments col.col-request-no { width: 16%; }
+    .table-dash-shipments col.col-main-branch { width: 9%; }
+    .table-dash-shipments col.col-branch-name { width: 24%; }
+    .table-dash-shipments col.col-serial { width: 13%; }
+    .table-dash-shipments col.col-status { width: 11%; }
+    .table-dash-shipments col.col-user { width: 13%; }
+    .branch-code {
+        color: #1d4ed8;
+        font-weight: 900;
+        white-space: nowrap;
+    }
+    .serial-text {
+        color: #7c2d12;
+        font-family: Consolas, Monaco, monospace;
+        font-weight: 900;
+        white-space: nowrap;
+    }
+    .text-ellipsis {
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .status-list {
+        display: grid;
+        gap: 10px;
+    }
+    .status-item {
+        border: 1px solid #eef2f7;
+        border-radius: 15px;
+        padding: 10px 12px;
+        background: #fbfdff;
+    }
+    .status-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+    .status-count {
+        color: #0f172a;
+        font-weight: 900;
+        font-size: 15px;
+    }
+    .mini-bar {
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+    .mini-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #0ea5e9, #2563eb);
+        border-radius: 999px;
+    }
+    .mini-metric {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-radius: 14px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        padding: 10px 12px;
+        margin-bottom: 9px;
+    }
+    .mini-metric .label {
+        font-size: 12px;
+        color: #64748b;
+        font-weight: 800;
+    }
+    .mini-metric .value {
+        font-size: 18px;
+        font-weight: 900;
+        color: #0f172a;
+    }
     @media (max-width: 1366px) {
-        .dashboard-page { padding-top: 8px; }
-        .dashboard-title { font-size: 20px; }
-        .dashboard-card .card-body { padding: 10px; }
-        .kpi-card .card-body { padding: 10px 12px; }
-        .kpi-value { font-size: 25px; }
-        .table-scroll { max-height: 300px; }
-        .table-scroll-small { max-height: 215px; }
-        .table-dashboard th, .table-dashboard td { font-size: 11.5px; padding: 6px 7px; }
+        .hdd-dashboard { padding-top: 8px; }
+        .hdd-title { font-size: 22px; }
+        .hdd-hero .card-body { padding: 15px 16px; }
+        .kpi-grid { gap: 8px; }
+        .kpi-tile { min-height: 86px; padding: 9px 10px; border-radius: 14px; }
+        .kpi-icon { width: 28px; height: 28px; margin-bottom: 6px; }
+        .kpi-label { font-size: 10.5px; }
+        .kpi-value { font-size: 22px; }
+        .kpi-note { font-size: 10px; }
+        .table-area-lg { max-height: 365px; }
+        .table-area-sm { max-height: 245px; }
+        .table-dash th, .table-dash td { font-size: 11.5px; padding: 7px 8px; }
+    }
+    @media (max-width: 1100px) {
+        .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 768px) {
+        .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .hero-stat { min-width: 100px; }
+    }
+    @media (max-width: 480px) {
+        .kpi-grid { grid-template-columns: 1fr; }
     }
 </style>
 
-<div class="container-fluid dashboard-page">
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
-        <div>
-            <h3 class="dashboard-title">Dashboard ระบบจัดส่ง Harddisk</h3>
-            <div class="dashboard-subtitle">ภาพรวมคำขอส่ง HDD, คลัง HDD, รายการรอดำเนินการ และประวัติจัดส่งล่าสุด</div>
-        </div>
-        <div class="d-flex flex-wrap gap-2">
-            <a href="../requests/create.php" class="btn btn-primary quick-btn">+ บันทึกคำขอ</a>
-            <a href="../requests/assign_hdd.php" class="btn btn-warning quick-btn">ยิงบาร์โค้ด</a>
-            <a href="../claim_returns/index.php" class="btn btn-outline-primary quick-btn">รับคืนเคลม</a>
-        </div>
-    </div>
-
-    <?php if ($dashboardError !== ''): ?>
-        <div class="alert alert-danger py-2 mb-2"><strong>เกิดข้อผิดพลาด:</strong> <?php echo h($dashboardError); ?></div>
-    <?php endif; ?>
-
-    <div class="card hero-card mb-2">
-        <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
-            <div>
-                <div class="fw-bold"></div>
-                <div class="small opacity-75">จัดการงานหลักของระบบ HDD ได้จาก Dashboard พร้อมสรุปสถานะสำคัญแบบทันที</div>
-            </div>
-            <div class="d-flex flex-wrap gap-2">
-                <span class="workflow-pill">📝 คำขอ <?php echo number_format($totalRequests); ?></span>
-                <span class="workflow-pill">💽 Stock <?php echo number_format($availableInventory); ?></span>
-                <span class="workflow-pill">🚚 เดือนนี้ <?php echo number_format($shipmentThisMonth); ?></span>
-            </div>
-        </div>
-    </div>
-
-    <div class="row g-2 mb-2">
-        <div class="col-lg-3 col-md-6"><div class="card kpi-card"><div class="card-body"><div class="kpi-label">รอยิงบาร์โค้ด</div><div class="kpi-value"><?php echo number_format($pendingScan); ?></div><div class="kpi-note">รอจับคู่ HDD กับสาขา</div></div></div></div>
-        <div class="col-lg-3 col-md-6"><div class="card kpi-card"><div class="card-body"><div class="kpi-label">รอยืนยันจัดส่ง</div><div class="kpi-value"><?php echo number_format($waitingConfirm); ?></div><div class="kpi-note">จับคู่แล้ว รอจัดส่ง</div></div></div></div>
-        <div class="col-lg-3 col-md-6"><div class="card kpi-card"><div class="card-body"><div class="kpi-label">HDD พร้อมใช้งาน</div><div class="kpi-value"><?php echo number_format($availableInventory); ?></div><div class="kpi-note">ทั้งหมด <?php echo number_format($totalInventory); ?> ลูก</div></div></div></div>
-        <div class="col-lg-3 col-md-6"><div class="card kpi-card"><div class="card-body"><div class="kpi-label">จัดส่งเดือนนี้</div><div class="kpi-value"><?php echo number_format($shipmentThisMonth); ?></div><div class="kpi-note">สะสม <?php echo number_format($totalShipments); ?> รายการ</div></div></div></div>
-    </div>
-
-    <div class="row g-2 mb-2">
-        <div class="col-xl-8 col-lg-8">
-            <div class="card dashboard-card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center"><div>🚦 รายการเร่งด่วน / รอดำเนินการ</div><a href="../requests/index.php" class="btn btn-sm btn-outline-primary">ดูทั้งหมด</a></div>
-                <div class="card-body p-0">
-                    <div class="table-responsive table-scroll">
-                        <table class="table table-hover table-bordered align-middle mb-0 table-dashboard">
-                            <thead><tr><th>เลขที่คำขอ</th><th>รหัสสาขา</th><th>Cost Center</th><th>ชื่อสาขา</th><th>Serial HDD</th><th>สถานะ</th><th>วันที่บันทึก</th><th>จัดการ</th></tr></thead>
-                            <tbody>
-                                <?php if (empty($urgentRequests)): ?>
-                                    <tr><td colspan="8" class="text-center text-muted py-4">ไม่มีรายการเร่งด่วน</td></tr>
-                                <?php else: ?>
-                                    <?php foreach ($urgentRequests as $row): ?>
-                                        <?php $createdDate = $row['created_at'] ?? ($row['requested_at'] ?? ''); $status = $row['status'] ?? ''; ?>
-                                        <tr>
-                                            <td><strong><?php echo h($row['request_no'] ?? '-'); ?></strong></td>
-                                            <td><?php echo h(dashFormatMainBranchCode($row['main_branch_code'] ?? '')); ?></td>
-                                            <td><span class="branch-code"><?php echo h($row['branch_code'] ?? '-'); ?></span></td>
-                                            <td><div class="text-ellipsis" title="<?php echo h($row['branch_name'] ?? '-'); ?>"><?php echo h($row['branch_name'] ?? '-'); ?></div></td>
-                                            <td><?php echo !empty($row['hdd_serial']) ? '<span class="serial-text">' . h($row['hdd_serial']) . '</span>' : '<span class="text-muted">ยังไม่จับคู่</span>'; ?></td>
-                                            <td><?php echo dashRequestStatusBadge($status); ?></td>
-                                            <td><?php echo h(dashFormatDateTimeThai($createdDate)); ?></td>
-                                            <td>
-                                                <?php if ($status === 'pending_scan' || $status === 'pending'): ?>
-                                                    <a href="../requests/assign_hdd.php?request_id=<?php echo (int)($row['id'] ?? 0); ?>" class="btn btn-sm btn-warning">ยิง HDD</a>
-                                                <?php else: ?>
-                                                    <a href="../requests/print_label.php?request_id=<?php echo (int)($row['id'] ?? 0); ?>" target="_blank" class="btn btn-sm btn-outline-dark">ปริ้น</a>
-                                                <?php endif; ?>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
+<div class="container-fluid hdd-dashboard">
+    <div class="card hdd-hero mb-3">
+        <div class="card-body">
+            <div class="row g-3 align-items-center">
+                <div class="col-xl-5 col-lg-5">
+                    <h3 class="hdd-title">Dashboard ระบบจัดส่ง Harddisk</h3>
+                    <div class="hdd-subtitle">ศูนย์รวมคำขอส่ง HDD, การยิงบาร์โค้ด, คลังอุปกรณ์ และรายการรอดำเนินการ</div>
+                </div>
+                <div class="col-xl-4 col-lg-4">
+                    <div class="d-flex flex-wrap gap-2 justify-content-lg-center">
+                        <div class="hero-stat"><div class="label">คำขอทั้งหมด</div><div class="value"><?php echo number_format($totalRequests); ?></div></div>
+                        <div class="hero-stat"><div class="label">Stock พร้อมใช้</div><div class="value"><?php echo number_format($availableInventory); ?></div></div>
+                        <div class="hero-stat"><div class="label">จัดส่งเดือนนี้</div><div class="value"><?php echo number_format($shipmentThisMonth); ?></div></div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-lg-3">
+                    <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                        <a href="../requests/create.php" class="btn btn-light quick-action">+ บันทึกคำขอ</a>
+                        <a href="../requests/assign_hdd.php" class="btn btn-warning quick-action">ยิงบาร์โค้ด</a>
+                        <a href="../claim_returns/index.php" class="btn btn-outline-light quick-action">รับคืนเคลม</a>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="col-xl-4 col-lg-4">
-            <div class="card dashboard-card h-100">
-                <div class="card-header">🧾 สรุปสถานะคำขอ</div>
-                <div class="card-body">
-                    <?php if (empty($requestStatusRows)): ?>
-                        <div class="text-muted small">ไม่พบข้อมูลสถานะคำขอ</div>
-                    <?php else: ?>
-                        <?php foreach ($requestStatusRows as $row): ?>
-                            <?php $count = (int)($row['total'] ?? 0); $percent = $totalRequests > 0 ? min(100, round(($count / $totalRequests) * 100)) : 0; ?>
-                            <div class="status-row"><div class="flex-grow-1"><?php echo dashRequestStatusBadge($row['status'] ?? ''); ?><div class="mini-bar"><div class="mini-bar-fill" style="width: <?php echo (int)$percent; ?>%;"></div></div></div><div class="status-count"><?php echo number_format($count); ?></div></div>
-                        <?php endforeach; ?>
-                        <div class="small text-muted mt-2">คำขอทั้งหมด: <?php echo number_format($totalRequests); ?> รายการ</div>
-                    <?php endif; ?>
-                </div>
+    <?php if ($dashboardError !== ''): ?>
+        <div class="alert alert-danger py-2 mb-3"><strong>เกิดข้อผิดพลาด:</strong> <?php echo h($dashboardError); ?></div>
+    <?php endif; ?>
+
+    <div class="kpi-grid mb-3">
+        <div class="kpi-tile"><div class="kpi-icon">BC</div><div class="kpi-label">รอยิงบาร์โค้ด</div><div class="kpi-value"><?php echo number_format($pendingScan); ?></div><div class="kpi-note">รอจับคู่ HDD กับสาขา</div></div>
+        <div class="kpi-tile"><div class="kpi-icon">CF</div><div class="kpi-label">รอยืนยันจัดส่ง</div><div class="kpi-value"><?php echo number_format($waitingConfirm); ?></div><div class="kpi-note">จับคู่แล้ว รอจัดส่ง</div></div>
+        <div class="kpi-tile"><div class="kpi-icon">AV</div><div class="kpi-label">HDD พร้อมใช้งาน</div><div class="kpi-value"><?php echo number_format($availableInventory); ?></div><div class="kpi-note">จากทั้งหมด <?php echo number_format($totalInventory); ?> ลูก</div></div>
+        <div class="kpi-tile"><div class="kpi-icon">RS</div><div class="kpi-label">HDD จองไว้</div><div class="kpi-value"><?php echo number_format($reservedInventory); ?></div><div class="kpi-note">รอส่งออกจากคลัง</div></div>
+        <div class="kpi-tile"><div class="kpi-icon">DM</div><div class="kpi-label">HDD ชำรุด</div><div class="kpi-value"><?php echo number_format($damagedInventory); ?></div><div class="kpi-note">รอรับคืน/ส่งเคลม</div></div>
+        <div class="kpi-tile"><div class="kpi-icon">SH</div><div class="kpi-label">จัดส่งเดือนนี้</div><div class="kpi-value"><?php echo number_format($shipmentThisMonth); ?></div><div class="kpi-note">สะสม <?php echo number_format($totalShipments); ?> รายการ</div></div>
+    </div>
+
+    <div class="card dash-card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="section-title"><span class="section-dot"></span> งานที่ต้องดำเนินการก่อน</div>
+            <a href="../requests/index.php" class="btn btn-sm btn-outline-primary">ดูรายการทั้งหมด</a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive table-area-stack-main">
+                <table class="table table-hover table-bordered align-middle mb-0 table-dash table-dash-wide table-dash-urgent">
+                    <colgroup>
+                        <col class="col-request-no">
+                        <col class="col-main-branch">
+                        <col class="col-branch-name">
+                        <col class="col-serial">
+                        <col class="col-status">
+                        <col class="col-date">
+                        <col class="col-action">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>เลขที่คำขอ</th>
+                            <th>รหัสสาขา</th>
+                            <th>ชื่อสาขา</th>
+                            <th>Serial HDD</th>
+                            <th>สถานะ</th>
+                            <th>วันที่บันทึก</th>
+                            <th>จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($urgentRequests)): ?>
+                            <tr><td colspan="7" class="text-center text-muted py-4">ไม่มีรายการเร่งด่วน</td></tr>
+                        <?php else: ?>
+                            <?php foreach ($urgentRequests as $row): ?>
+                                <?php $createdDate = $row['created_at'] ?? ($row['requested_at'] ?? ''); $status = $row['status'] ?? ''; ?>
+                                <tr>
+                                    <td><strong><?php echo h($row['request_no'] ?? '-'); ?></strong></td>
+                                    <td><?php echo h(dashFormatMainBranchCode($row['main_branch_code'] ?? '')); ?></td>
+                                    <td><div class="text-ellipsis" title="<?php echo h($row['branch_name'] ?? '-'); ?>"><?php echo h($row['branch_name'] ?? '-'); ?></div></td>
+                                    <td><?php echo !empty($row['hdd_serial']) ? '<span class="serial-text">' . h($row['hdd_serial']) . '</span>' : '<span class="text-muted">ยังไม่จับคู่</span>'; ?></td>
+                                    <td><?php echo dashRequestStatusBadge($status); ?></td>
+                                    <td><?php echo h(dashFormatDateTimeThai($createdDate)); ?></td>
+                                    <td>
+                                        <?php if ($status === 'pending_scan' || $status === 'pending'): ?>
+                                            <a href="../requests/assign_hdd.php?request_id=<?php echo (int)($row['id'] ?? 0); ?>" class="btn btn-sm btn-warning">ยิง HDD</a>
+                                        <?php else: ?>
+                                            <a href="../requests/print_label.php?request_id=<?php echo (int)($row['id'] ?? 0); ?>" target="_blank" class="btn btn-sm btn-outline-dark">ปริ้น</a>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
-    <div class="row g-2">
-        <div class="col-xl-4 col-lg-4">
-            <div class="card dashboard-card h-100">
-                <div class="card-header">💽 สรุปคลัง Harddisk</div>
+    <div class="card dash-card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="section-title"><span class="section-dot"></span> คำขอล่าสุด</div>
+            <a href="../requests/index.php" class="btn btn-sm btn-outline-primary">เปิดรายการคำขอ</a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive table-area-stack">
+                <table class="table table-hover table-bordered align-middle mb-0 table-dash table-dash-wide table-dash-requests">
+                    <colgroup>
+                        <col class="col-request-no">
+                        <col class="col-main-branch">
+                        <col class="col-branch-name">
+                        <col class="col-serial">
+                        <col class="col-status">
+                        <col class="col-date">
+                        <col class="col-reason">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>เลขที่คำขอ</th>
+                            <th>รหัสสาขา</th>
+                            <th>ชื่อสาขา</th>
+                            <th>Serial HDD</th>
+                            <th>สถานะ</th>
+                            <th>วันที่บันทึก</th>
+                            <th>เหตุผล</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($latestRequests)): ?>
+                            <tr><td colspan="7" class="text-center text-muted py-4">ไม่พบรายการคำขอ</td></tr>
+                        <?php else: ?>
+                            <?php foreach ($latestRequests as $row): ?>
+                                <?php $createdDate = $row['created_at'] ?? ($row['requested_at'] ?? ''); ?>
+                                <tr>
+                                    <td><strong><?php echo h($row['request_no'] ?? '-'); ?></strong></td>
+                                    <td><?php echo h(dashFormatMainBranchCode($row['main_branch_code'] ?? '')); ?></td>
+                                    <td><div class="text-ellipsis" title="<?php echo h($row['branch_name'] ?? '-'); ?>"><?php echo h($row['branch_name'] ?? '-'); ?></div></td>
+                                    <td><?php echo !empty($row['hdd_serial']) ? '<span class="serial-text">' . h($row['hdd_serial']) . '</span>' : '<span class="text-muted">-</span>'; ?></td>
+                                    <td><?php echo dashRequestStatusBadge($row['status'] ?? ''); ?></td>
+                                    <td><?php echo h(dashFormatDateTimeThai($createdDate)); ?></td>
+                                    <td><div class="text-ellipsis" title="<?php echo h($row['request_reason'] ?? ($row['remark'] ?? '-')); ?>"><?php echo h($row['request_reason'] ?? ($row['remark'] ?? '-')); ?></div></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card dash-card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="section-title"><span class="section-dot"></span> จัดส่งล่าสุด</div>
+            <a href="../shipments/index.php" class="btn btn-sm btn-outline-primary">เปิดประวัติการจัดส่ง</a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive table-area-stack">
+                <table class="table table-hover table-bordered align-middle mb-0 table-dash table-dash-wide table-dash-shipments">
+                    <colgroup>
+                        <col class="col-ship-date">
+                        <col class="col-request-no">
+                        <col class="col-main-branch">
+                        <col class="col-branch-name">
+                        <col class="col-serial">
+                        <col class="col-status">
+                        <col class="col-user">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>วันที่ส่ง</th>
+                            <th>เลขที่คำขอ</th>
+                            <th>รหัสสาขา</th>
+                            <th>ชื่อสาขา</th>
+                            <th>Serial HDD</th>
+                            <th>สถานะ</th>
+                            <th>ผู้แจ้ง/ผู้บันทึก</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($latestShipments)): ?>
+                            <tr><td colspan="7" class="text-center text-muted py-4">ยังไม่มีประวัติการจัดส่ง</td></tr>
+                        <?php else: ?>
+                            <?php foreach ($latestShipments as $row): ?>
+                                <?php
+                                $shipDate = $row['shipped_at'] ?? ($row['shipped_date'] ?? ($row['created_at'] ?? ''));
+                                $shipRequestNo = $row['request_no'] ?? ($row['delivery_request_no'] ?? '-');
+                                $shipStatus = $row['shipment_status'] ?? ($row['status'] ?? 'shipped');
+                                $shipUser = $row['reported_by'] ?? ($row['created_by'] ?? '-');
+                                ?>
+                                <tr>
+                                    <td><?php echo h(dashFormatDateTimeThai($shipDate)); ?></td>
+                                    <td><strong><?php echo h($shipRequestNo); ?></strong></td>
+                                    <td><?php echo h(dashFormatMainBranchCode($row['main_branch_code'] ?? '')); ?></td>
+                                    <td><div class="text-ellipsis" title="<?php echo h($row['branch_name'] ?? '-'); ?>"><?php echo h($row['branch_name'] ?? '-'); ?></div></td>
+                                    <td><?php echo !empty($row['hdd_serial']) ? '<span class="serial-text">' . h($row['hdd_serial']) . '</span>' : '<span class="text-muted">-</span>'; ?></td>
+                                    <td><?php echo dashRequestStatusBadge($shipStatus); ?></td>
+                                    <td><div class="text-ellipsis" title="<?php echo h($shipUser); ?>"><?php echo h($shipUser); ?></div></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-xl-8 col-lg-8">
+            <div class="card dash-card h-100">
+                <div class="card-header"><div class="section-title"><span class="section-dot"></span> สรุปสถานะคำขอ</div></div>
                 <div class="card-body">
-                    <?php if (empty($inventoryStatusRows)): ?>
-                        <div class="text-muted small">ไม่พบข้อมูลคลัง HDD</div>
+                    <?php if (empty($requestStatusRows)): ?>
+                        <div class="text-muted small">ไม่พบข้อมูลสถานะคำขอ</div>
                     <?php else: ?>
-                        <?php foreach ($inventoryStatusRows as $row): ?>
-                            <?php $count = (int)($row['total'] ?? 0); $percent = $totalInventory > 0 ? min(100, round(($count / $totalInventory) * 100)) : 0; ?>
-                            <div class="status-row"><div class="flex-grow-1"><?php echo dashInventoryStatusBadge($row['status'] ?? ''); ?><div class="mini-bar"><div class="mini-bar-fill" style="width: <?php echo (int)$percent; ?>%;"></div></div></div><div class="status-count"><?php echo number_format($count); ?></div></div>
-                        <?php endforeach; ?>
-                        <div class="small text-muted mt-2">จองไว้: <?php echo number_format($reservedInventory); ?> / ชำรุด: <?php echo number_format($damagedInventory); ?></div>
+                        <div class="status-list">
+                            <?php foreach ($requestStatusRows as $row): ?>
+                                <?php $count = (int)($row['total'] ?? 0); $percent = $totalRequests > 0 ? min(100, round(($count / $totalRequests) * 100)) : 0; ?>
+                                <div class="status-item">
+                                    <div class="status-line"><div><?php echo dashRequestStatusBadge($row['status'] ?? ''); ?></div><div class="status-count"><?php echo number_format($count); ?></div></div>
+                                    <div class="mini-bar"><div class="mini-bar-fill" style="width: <?php echo (int)$percent; ?>%;"></div></div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
                     <?php endif; ?>
                 </div>
             </div>
         </div>
-
         <div class="col-xl-4 col-lg-4">
-            <div class="card dashboard-card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center"><div>📝 รายการคำขอล่าสุด</div><a href="../requests/index.php" class="btn btn-sm btn-outline-primary">เปิด</a></div>
-                <div class="card-body p-0"><div class="table-responsive table-scroll-small"><table class="table table-hover table-bordered align-middle mb-0 table-dashboard"><thead><tr><th>เลขที่คำขอ</th><th>Cost Center</th><th>สาขา</th><th>สถานะ</th></tr></thead><tbody>
-                    <?php if (empty($latestRequests)): ?><tr><td colspan="4" class="text-center text-muted py-4">ไม่พบรายการคำขอ</td></tr><?php else: ?>
-                        <?php foreach ($latestRequests as $row): ?><tr><td><strong><?php echo h($row['request_no'] ?? '-'); ?></strong></td><td><span class="branch-code"><?php echo h($row['branch_code'] ?? '-'); ?></span></td><td><div class="text-ellipsis" title="<?php echo h($row['branch_name'] ?? '-'); ?>"><?php echo h($row['branch_name'] ?? '-'); ?></div></td><td><?php echo dashRequestStatusBadge($row['status'] ?? ''); ?></td></tr><?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody></table></div></div>
-            </div>
-        </div>
-
-        <div class="col-xl-4 col-lg-4">
-            <div class="card dashboard-card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center"><div>🚚 รายการจัดส่งล่าสุด</div><a href="../shipments/index.php" class="btn btn-sm btn-outline-primary">เปิด</a></div>
-                <div class="card-body p-0"><div class="table-responsive table-scroll-small"><table class="table table-hover table-bordered align-middle mb-0 table-dashboard"><thead><tr><th>วันที่ส่ง</th><th>Cost Center</th><th>สาขา</th><th>Serial HDD</th></tr></thead><tbody>
-                    <?php if (empty($latestShipments)): ?><tr><td colspan="4" class="text-center text-muted py-4">ยังไม่มีประวัติการจัดส่ง</td></tr><?php else: ?>
-                        <?php foreach ($latestShipments as $row): ?><?php $shipDate = $row['shipped_at'] ?? ($row['shipped_date'] ?? ($row['created_at'] ?? '')); ?><tr><td><?php echo h(dashFormatDateTimeThai($shipDate)); ?></td><td><span class="branch-code"><?php echo h($row['branch_code'] ?? '-'); ?></span></td><td><div class="text-ellipsis" title="<?php echo h($row['branch_name'] ?? '-'); ?>"><?php echo h($row['branch_name'] ?? '-'); ?></div></td><td><?php echo !empty($row['hdd_serial']) ? '<span class="serial-text">' . h($row['hdd_serial']) . '</span>' : '<span class="text-muted">-</span>'; ?></td></tr><?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody></table></div></div>
+            <div class="card dash-card h-100">
+                <div class="card-header"><div class="section-title"><span class="section-dot"></span> สรุปคลังแบบเร็ว</div></div>
+                <div class="card-body">
+                    <div class="mini-metric"><span class="label">พร้อมใช้งาน</span><span class="value text-success"><?php echo number_format($availableInventory); ?></span></div>
+                    <div class="mini-metric"><span class="label">จองไว้</span><span class="value text-warning"><?php echo number_format($reservedInventory); ?></span></div>
+                    <div class="mini-metric"><span class="label">ชำรุด</span><span class="value text-danger"><?php echo number_format($damagedInventory); ?></span></div>
+                    <a href="../inventory/index.php" class="btn btn-outline-primary w-100 quick-action">เปิดคลัง Harddisk</a>
+                </div>
             </div>
         </div>
     </div>
